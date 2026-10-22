@@ -9,9 +9,18 @@ require: Callable[[str], Any]
 
 COMMAND_PROPERTY = 'customData.ssm3RobotCommand'
 STATUS_PROPERTY = 'customData.ssm3RobotStatus'
-CONTROLLER_VERSION = 'multi-object-v5'
+CONTROLLER_VERSION = 'multi-object-v8-solid-objects'
 OBJECT_NAMES = ('Object_A', 'Object_B', 'Object_C')
 ZONE_NAMES = ('Zone_A', 'Zone_B', 'Zone_C', 'Zone_D')
+STARTUP_TARGET_POSE = [
+    -0.27599991760514114,
+    -0.6399999948511791,
+    1.3100001510135082,
+    3.622934103621334e-16,
+    2.3927407430606268e-16,
+    -1.4568521819311956e-09,
+    1.0,
+]
 
 def find_object(names):
     for name in names:
@@ -20,6 +29,21 @@ def find_object(names):
             return handle
 
     raise RuntimeError('Cannot find object: ' + ' or '.join(names))
+
+
+def configure_physical_shape(handle, dynamic, respondable):
+    self.sim.setBoolProperty(handle, 'dynamic', dynamic)
+    self.sim.setBoolProperty(handle, 'respondable', respondable)
+
+    # A saved scene can retain restrictive respondable masks even after the
+    # dynamic/respondable flags are corrected. Normalize the mask when this
+    # simulator build exposes the shape parameter.
+    mask_param = getattr(
+        self.sim, 'shapeintparam_respondable_mask', None
+    )
+    set_int_param = getattr(self.sim, 'setObjectInt32Param', None)
+    if mask_param is not None and callable(set_int_param):
+        set_int_param(handle, mask_param, 0xFFFF)
 
 
 def sysCall_init():
@@ -31,9 +55,14 @@ def sysCall_init():
         '/Robot_Arm/manipSphere/target'
     )
     self.tip = self.sim.getObject('/tip')
-    self.home_target_pose = self.sim.getObjectPose(
-        self.manip_sphere, self.sim.handle_world
+    # Always start from the known reachable calibration pose. A previous
+    # interrupted trial can leave the saved target outside the IK workspace.
+    self.sim.setObjectPose(
+        self.manip_sphere,
+        STARTUP_TARGET_POSE,
+        self.sim.handle_world
     )
+    self.home_target_pose = list(STARTUP_TARGET_POSE)
 
     self.objects = {
         name: find_object([name])
@@ -43,11 +72,24 @@ def sysCall_init():
         name: find_object([name])
         for name in ZONE_NAMES
     }
+    for handle in self.objects.values():
+        configure_physical_shape(handle, True, True)
+    for handle in self.zones.values():
+        configure_physical_shape(handle, False, True)
     self.part = None
     self.place_zone = None
     self.part_name = None
     self.place_zone_name = None
+    self.placed_objects_by_zone = {
+        name: [] for name in ZONE_NAMES
+    }
     self.sensor = find_object(['Sensor'])
+    self.obstacle = self.sim.getObject(
+        '/Obstacle_Test', {'noError': True}
+    )
+    if self.obstacle is not None and self.obstacle >= 0:
+        configure_physical_shape(self.obstacle, False, True)
+    self.obstacle_clearance = 0.06
 
     # The sensor is inside the suction pad. Parent the picked cube to it.
     self.pad = self.sim.getObjectParent(self.sensor)
@@ -58,9 +100,14 @@ def sysCall_init():
         )
         for name, handle in self.objects.items()
     }
+    self.object_initial_poses = {
+        name: self.sim.getObjectPose(handle, self.sim.handle_world)
+        for name, handle in self.objects.items()
+    }
     self.attached = False
     self.controller_id = uuid4().hex
     self.heartbeat = 0
+    self.motion_generation = 0
 
     # The robot waits for a request instead of running automatically on Play.
     self.sim.removeProperty(self.sim.handle_scene, COMMAND_PROPERTY,
@@ -101,6 +148,19 @@ def sysCall_init():
 
 
 def publish_status(state, request_id=None, message='', **extra):
+    extra.setdefault('motion_generation', self.motion_generation)
+    extra.setdefault(
+        'target_position',
+        self.sim.getObjectPosition(self.manip_sphere, self.sim.handle_world)
+    )
+    extra.setdefault(
+        'sensor_position',
+        self.sim.getObjectPosition(self.sensor, self.sim.handle_world)
+    )
+    extra.setdefault(
+        'tip_position',
+        self.sim.getObjectPosition(self.tip, self.sim.handle_world)
+    )
     payload = {
         'state': state,
         'controller_version': CONTROLLER_VERSION,
@@ -110,6 +170,9 @@ def publish_status(state, request_id=None, message='', **extra):
         'controller_id': self.controller_id,
         'heartbeat': self.heartbeat,
         'sim_time': self.sim.getSimulationTime(),
+        'reachable': extra.pop('reachable', state != 'error'),
+        'collision_detected': extra.pop('collision_detected', False),
+        'placement_error_m': extra.pop('placement_error_m', None),
         **extra,
     }
     self.last_status = payload
@@ -134,6 +197,7 @@ def sysCall_actuation():
 
 
 def move_to(pose):
+    self.motion_generation += 1
     self.sim.moveToPose({
         'object': self.manip_sphere,
         'targetPose': pose,
@@ -181,9 +245,36 @@ def return_home():
         )
 
 
+def reset_trial():
+    if self.attached:
+        self.sim.setObjectParent(
+            self.part, self.sim.handle_world, True
+        )
+        self.attached = False
+    for name, handle in self.objects.items():
+        self.sim.setObjectParent(handle, self.sim.handle_world, True)
+        self.sim.setObjectPose(
+            handle, self.object_initial_poses[name], self.sim.handle_world
+        )
+        dynamic, respondable = self.object_physics[name]
+        configure_physical_shape(handle, dynamic, respondable)
+        if dynamic:
+            self.sim.resetDynamicObject(handle)
+    self.part = None
+    self.place_zone = None
+    self.part_name = None
+    self.place_zone_name = None
+    self.placed_objects_by_zone = {
+        name: [] for name in ZONE_NAMES
+    }
+    move_to(self.home_target_pose)
+    self.sim.wait(0.5)
+
+
 def attach_part():
-    self.sim.setBoolProperty(self.part, 'dynamic', False)
-    self.sim.setBoolProperty(self.part, 'respondable', False)
+    # Disable physics only while the object is rigidly parented to the pad.
+    # release_part restores the original solid-body state before verification.
+    configure_physical_shape(self.part, False, False)
     self.sim.setObjectParent(self.part, self.pad, True)
 
     self.attached = True
@@ -197,12 +288,11 @@ def attach_part():
 def release_part():
     self.sim.setObjectParent(self.part, self.sim.handle_world, True)
 
-    self.sim.setBoolProperty(
-        self.part, 'respondable',
-        self.object_physics[self.part_name][1]
-    )
     part_dynamic = self.object_physics[self.part_name][0]
-    self.sim.setBoolProperty(self.part, 'dynamic', part_dynamic)
+    part_respondable = self.object_physics[self.part_name][1]
+    configure_physical_shape(
+        self.part, part_dynamic, part_respondable
+    )
     if part_dynamic:
         self.sim.resetDynamicObject(self.part)
 
@@ -236,6 +326,13 @@ def select_task(source, destination):
 
 
 def move_sensor_to(position, label):
+    sensor_position = self.sim.getObjectPosition(
+        self.sensor, self.sim.handle_world
+    )
+    move_sensor_with_obstacle_avoidance(sensor_position, position, label)
+
+
+def move_sensor_direct(position, label):
     sensor_position = self.sim.getObjectPosition(
         self.sensor, self.sim.handle_world
     )
@@ -274,6 +371,85 @@ def move_sensor_to(position, label):
         f'Arm could not reach {label} '
         f'(position error {remaining_error:.3f} m)'
     )
+
+
+def obstacle_detour(position):
+    if self.obstacle is None:
+        return None
+
+    obstacle_position = self.sim.getObjectPosition(
+        self.obstacle, self.sim.handle_world
+    )
+    obstacle_size, _ = self.sim.getShapeBB(self.obstacle)
+    half_x = obstacle_size[0] / 2 + self.obstacle_clearance
+    half_y = obstacle_size[1] / 2 + self.obstacle_clearance
+    start = self.sim.getObjectPosition(self.sensor, self.sim.handle_world)
+    end = position
+
+    def inside_xy(point):
+        return (
+            abs(point[0] - obstacle_position[0]) <= half_x
+            and abs(point[1] - obstacle_position[1]) <= half_y
+        )
+
+    # A direct vertical approach is safe when neither endpoint is inside the
+    # obstacle footprint. For a crossing path, route above the obstacle.
+    if not inside_xy(start) and not inside_xy(end):
+        dx = end[0] - start[0]
+        dy = end[1] - start[1]
+        length_sq = dx * dx + dy * dy
+        if length_sq > 1e-9:
+            t = max(0.0, min(1.0, (
+                (obstacle_position[0] - start[0]) * dx
+                + (obstacle_position[1] - start[1]) * dy
+            ) / length_sq))
+            closest = [start[0] + t * dx, start[1] + t * dy]
+            if (
+                abs(closest[0] - obstacle_position[0]) > half_x
+                or abs(closest[1] - obstacle_position[1]) > half_y
+            ):
+                return None
+
+    obstacle_top = obstacle_position[2] + obstacle_size[2] / 2
+    payload_clearance = 0.0
+    if self.attached and self.part is not None:
+        part_size, _ = self.sim.getShapeBB(self.part)
+        part_position = self.sim.getObjectPosition(
+            self.part, self.sim.handle_world
+        )
+        part_sensor_offset_z = part_position[2] - start[2]
+        payload_clearance = max(
+            0.0,
+            -part_sensor_offset_z + part_size[2] / 2
+        )
+    waypoint_z = max(
+        start[2],
+        end[2],
+        obstacle_top + self.obstacle_clearance + payload_clearance
+    )
+    end_waypoint_z = waypoint_z if inside_xy(end) else end[2]
+    return [
+        [start[0], start[1], waypoint_z],
+        [end[0], end[1], end_waypoint_z],
+    ]
+
+
+def move_sensor_with_obstacle_avoidance(start, position, label):
+    detour = obstacle_detour(position)
+    if detour is None:
+        move_sensor_direct(position, label)
+        return
+
+    self.sim.addLog(
+        self.sim.verbosity_scriptwarnings,
+        f'Obstacle detected on path to {label}; using elevated detour'
+    )
+    for index, waypoint in enumerate(detour):
+        move_sensor_direct(
+            waypoint,
+            f'{label} obstacle detour waypoint {index + 1}'
+        )
+    move_sensor_direct(position, label)
 
 
 def move_over_part(object_name=None):
@@ -361,6 +537,34 @@ def pick_part():
     )
 
 
+def get_drop_position(part_size, zone_size, zone_position):
+    placed_count = len(
+        self.placed_objects_by_zone[self.place_zone_name]
+    )
+    slot_offsets = (
+        (0.0, 0.0),
+        (-0.09, 0.0),
+        (0.09, 0.0),
+        (0.0, -0.09),
+        (0.0, 0.09),
+    )
+    offset = slot_offsets[min(placed_count, len(slot_offsets) - 1)]
+    max_x_offset = max(
+        0.0,
+        zone_size[0] / 2 - part_size[0] / 2 - 0.01
+    )
+    max_y_offset = max(
+        0.0,
+        zone_size[1] / 2 - part_size[1] / 2 - 0.01
+    )
+    return [
+        zone_position[0] + min(abs(offset[0]), max_x_offset)
+        * (1 if offset[0] >= 0 else -1),
+        zone_position[1] + min(abs(offset[1]), max_y_offset)
+        * (1 if offset[1] >= 0 else -1),
+    ]
+
+
 def move_over_zone():
     if not self.attached:
         raise RuntimeError(
@@ -387,9 +591,10 @@ def move_over_zone():
         current_part_position[axis] - sensor_position[axis]
         for axis in range(3)
     ]
+    drop_position = get_drop_position(part_size, zone_size, zone_position)
     desired_part_position = [
-        zone_position[0],
-        zone_position[1],
+        drop_position[0],
+        drop_position[1],
         final_part_z + 0.08
     ]
     move_sensor_to([
@@ -423,9 +628,10 @@ def place_part():
         current_part_position[axis] - sensor_position[axis]
         for axis in range(3)
     ]
+    drop_position = get_drop_position(part_size, zone_size, zone_position)
     desired_part_position = [
-        zone_position[0],
-        zone_position[1],
+        drop_position[0],
+        drop_position[1],
         final_part_z
     ]
     move_sensor_to([
@@ -437,17 +643,24 @@ def place_part():
     actual_part = self.sim.getObjectPosition(
         self.part, self.sim.handle_world
     )
-    expected_part = [zone_position[0], zone_position[1], final_part_z]
-    if math.dist(actual_part, expected_part) > 0.035:
+    expected_part = [drop_position[0], drop_position[1], final_part_z]
+    placement_error = math.dist(actual_part, expected_part)
+    if placement_error > 0.035:
         raise RuntimeError(
             f'{self.part_name} did not reach {self.place_zone_name}; '
             'leaving it attached for inspection'
         )
 
+    # Keep the released object dynamic and respondable so it remains a solid
+    # body and can physically support or collide with later placements.
     release_part()
+    self.placed_objects_by_zone[self.place_zone_name].append(
+        self.part_name
+    )
     self.sim.wait(0.5)
     move_up(0.10)
     return_home()
+    return placement_error
 
 
 def execute_skill(action, target):
@@ -474,11 +687,11 @@ def execute_skill(action, target):
             raise RuntimeError(
                 f'No active task for {target}; send a task selection first'
             )
-        place_part()
+        return place_part()
     else:
         raise ValueError(
             'Allowed skills are move/pick(Object_A|Object_B|Object_C) '
-            'and move/place(Zone_A|Zone_B|Zone_C|Zone_D)'
+            'and move/place(Zone_A|Zone_B|Zone_C)'
         )
 
 
@@ -492,7 +705,6 @@ def pick_and_place(source, destination):
         self.sim.verbosity_scriptinfos,
         'Pick-and-place routine completed'
     )
-    return self.sim.getObjectPosition(self.part, self.sim.handle_world)
     return self.sim.getObjectPosition(self.part, self.sim.handle_world)
 
 
@@ -529,14 +741,19 @@ def sysCall_thread():
             request_id = request.get('request_id')
             if not isinstance(request_id, str) or not request_id:
                 raise ValueError('Missing request_id')
+            reset_command = set(request) == {
+                'request_id', 'action'
+            }
             legacy_command = set(request) == {
                 'request_id', 'action', 'source', 'destination'
             }
             skill_command = set(request) == {
                 'request_id', 'action', 'target', 'source', 'destination'
             }
-            if not legacy_command and not skill_command:
+            if not reset_command and not legacy_command and not skill_command:
                 raise ValueError('Unexpected or missing command fields')
+            if reset_command and request['action'] != 'reset':
+                raise ValueError('Only reset is supported without a task')
             if legacy_command and request['action'] != 'pick_and_place':
                 raise ValueError('Legacy action must be pick_and_place')
             if skill_command and not (
@@ -553,27 +770,53 @@ def sysCall_thread():
                     'stop and inspect the scene'
                 )
 
+            if reset_command:
+                publish_status(
+                    'busy', request_id, 'Resetting trial',
+                    command_started=True
+                )
+                reset_trial()
+                publish_status(
+                    'done', request_id, 'Trial reset',
+                    reachable=True,
+                    collision_detected=False,
+                    command_started=True,
+                )
+                continue
             if legacy_command:
                 select_task(request['source'], request['destination'])
                 message = (
                     f"Moving {request['source']} to "
                     f"{request['destination']}"
                 )
-                publish_status('busy', request_id, message)
+                publish_status(
+                    'busy', request_id, message,
+                    command_started=True
+                )
                 final_position = pick_and_place(
                     request['source'], request['destination']
                 )
+                placement_error = 0.0
             else:
                 select_task(request['source'], request['destination'])
                 message = f"Executing {request['action']}({request['target']})"
-                publish_status('busy', request_id, message)
-                execute_skill(request['action'], request['target'])
+                publish_status(
+                    'busy', request_id, message,
+                    command_started=True
+                )
+                placement_error = execute_skill(
+                    request['action'], request['target']
+                )
                 final_position = self.sim.getObjectPosition(
                     self.part, self.sim.handle_world
                 )
             publish_status(
                 'done', request_id, message,
                 part_position=final_position,
+                placement_error_m=placement_error,
+                reachable=True,
+                collision_detected=False,
+                command_started=True,
                 source=self.part_name,
                 destination=self.place_zone_name,
             )
