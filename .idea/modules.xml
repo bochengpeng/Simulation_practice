@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Simulation_practice.iml" filepath="$PROJECT_DIR$/.idea/Simulation_practice.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/RoboDK_Experiment.iml" filepath="$PROJECT_DIR$/.idea/RoboDK_Experiment.iml" />
     </modules>
   </component>
 </project>
