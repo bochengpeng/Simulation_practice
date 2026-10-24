@@ -1,0 +1,10 @@
+args,completed,event_id,feedback,kind,part,plan,pose,skill,snapshot_id,success,task,timestamp
+,,,,start,,,,,,,"{'task_id': 'task-A', 'requested_parts': ['Part_A'], 'order': ['Part_A'], 'destinations': {'Part_A': 'Slot_1'}, 'goal': 'Place requested parts in their assigned processing slots'}",1792766297.7758303
+,,,,plan,,"{'task_id': 'task-A', 'based_on_snapshot': 'scene-46282d1f', 'disposition': 'execute', 'reason': 'Immediate deterministic replan after observed scene change', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_A'}}, {'skill': 'pick', 'args': {'object_id': 'Part_A'}}, {'skill': 'place', 'args': {'object_id': 'Part_A', 'slot_id': 'Slot_1'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-001'}",,,,,,1792766299.9232059
+,,task-A:relocate:Part_A,,relocation,Part_A,,"{'part': 'Part_A', 'x_mm': 500.0, 'y_mm': -190.0, 'z_mm': 50.0}",,,,,1792766299.9962792
+,,,"{'code': 'OBJECT_MOVED', 'reason': 'Part_A moved at relocation gate', 'event_id': 'task-A:relocate:Part_A', 'affected_object': 'Part_A', 'failed_plan_id': 'plan-001'}",plan,,"{'task_id': 'task-A', 'based_on_snapshot': 'scene-db101e08', 'disposition': 'execute', 'reason': 'Immediate deterministic replan after observed scene change', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_A'}}, {'skill': 'pick', 'args': {'object_id': 'Part_A'}}, {'skill': 'place', 'args': {'object_id': 'Part_A', 'slot_id': 'Slot_1'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-002'}",,,,,,1792766299.9969945
+{'object_id': 'Part_A'},,,,action,,,,inspect,scene-79a30b6d,,,1792766300.2893834
+{'object_id': 'Part_A'},,,,action,,,,pick,scene-ca8a4446,,,1792766300.3577282
+"{'object_id': 'Part_A', 'slot_id': 'Slot_1'}",,,,action,,,,place,scene-78c33392,,,1792766303.3996382
+{'target_id': 'Clearance'},,,,action,,,,move_to,scene-9006fb8f,,,1792766303.478569
+,['Part_A'],,,result,,,,,,True,,1792766303.5465605

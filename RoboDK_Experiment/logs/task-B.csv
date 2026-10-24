@@ -1,0 +1,10 @@
+args,completed,event_id,feedback,kind,part,plan,skill,snapshot_id,success,task,timestamp
+,,,,start,,,,,,"{'task_id': 'task-B', 'requested_parts': ['Part_B'], 'order': ['Part_B'], 'destinations': {'Part_B': 'Slot_2'}, 'goal': 'Place requested parts in their assigned processing slots'}",1792748281.4214842
+,,,,plan,,"{'task_id': 'task-B', 'based_on_snapshot': 'scene-2fcd3706', 'disposition': 'execute', 'reason': 'Deterministic allowlisted plan', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_B'}}, {'skill': 'pick', 'args': {'object_id': 'Part_B'}}, {'skill': 'place', 'args': {'object_id': 'Part_B', 'slot_id': 'Slot_2'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-001'}",,,,,1792748281.4225187
+,,task-B:relocate:Part_B,,relocation,Part_B,,,,,,1792748281.4677424
+,,,"{'code': 'OBJECT_MOVED', 'reason': 'Part_B moved at relocation gate', 'event_id': 'task-B:relocate:Part_B', 'affected_object': 'Part_B', 'failed_plan_id': 'plan-001'}",plan,,"{'task_id': 'task-B', 'based_on_snapshot': 'scene-35b80454', 'disposition': 'execute', 'reason': 'Deterministic allowlisted plan', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_B'}}, {'skill': 'pick', 'args': {'object_id': 'Part_B'}}, {'skill': 'place', 'args': {'object_id': 'Part_B', 'slot_id': 'Slot_2'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-002'}",,,,,1792748281.4683788
+{'object_id': 'Part_B'},,,,action,,,inspect,scene-d05e33bf,,,1792748281.5796955
+{'object_id': 'Part_B'},,,,action,,,pick,scene-1e8cf376,,,1792748281.5860465
+"{'object_id': 'Part_B', 'slot_id': 'Slot_2'}",,,,action,,,place,scene-5c647a4d,,,1792748294.3688045
+{'target_id': 'Clearance'},,,,action,,,move_to,scene-e322e134,,,1792748294.390761
+,['Part_B'],,,result,,,,,True,,1792748294.3964393

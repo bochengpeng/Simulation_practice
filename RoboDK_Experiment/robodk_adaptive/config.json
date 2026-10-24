@@ -1,0 +1,8 @@
+﻿{
+  "station": "Doosan_M0609_SSM3_Experiment.rdk",
+  "simulation_only": true,
+  "parts": {"Part_A": "Slot_1", "Part_B": "Slot_2", "Part_C": "Slot_3"},
+  "thresholds_mm": {"movement": 2, "placement": 5},
+  "retry_limits": {"episode": 3, "run": 9, "communication": 2},
+  "ollama": {"host_env": "OLLAMA_HOST", "model_env": "OLLAMA_MODEL", "timeout_env": "OLLAMA_TIMEOUT_S"}
+}

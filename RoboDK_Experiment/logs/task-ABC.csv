@@ -1,0 +1,24 @@
+args,completed,event_id,feedback,kind,part,plan,pose,skill,snapshot_id,success,task,timestamp
+,,,,start,,,,,,,"{'task_id': 'task-ABC', 'requested_parts': ['Part_A', 'Part_B', 'Part_C'], 'order': ['Part_A', 'Part_B', 'Part_C'], 'destinations': {'Part_A': 'Slot_1', 'Part_B': 'Slot_2', 'Part_C': 'Slot_3'}, 'goal': 'Place requested parts in their assigned processing slots'}",1792860720.4779396
+,,,,plan,,"{'task_id': 'task-ABC', 'based_on_snapshot': 'scene-d0a385b7', 'disposition': 'execute', 'reason': '', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_A'}}, {'skill': 'pick', 'args': {'object_id': 'Part_A'}}, {'skill': 'place', 'args': {'object_id': 'Part_A', 'slot_id': 'Slot_1'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-001'}",,,,,,1792860729.995374
+,,task-ABC:relocate:Part_A,,relocation,Part_A,,"{'part': 'Part_A', 'x_mm': 430.0, 'y_mm': -70.0, 'z_mm': 50.0}",,,,,1792860731.3928256
+,,,"{'code': 'OBJECT_MOVED', 'reason': 'Part_A moved at relocation gate', 'event_id': 'task-ABC:relocate:Part_A', 'affected_object': 'Part_A', 'failed_plan_id': 'plan-001'}",plan,,"{'task_id': 'task-ABC', 'based_on_snapshot': 'scene-15870ed5', 'disposition': 'execute', 'reason': '', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_A'}}, {'skill': 'pick', 'args': {'object_id': 'Part_A'}}, {'skill': 'place', 'args': {'object_id': 'Part_A', 'slot_id': 'Slot_1'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-002'}",,,,,,1792860741.2489965
+{'object_id': 'Part_A'},,,,action,,,,inspect,scene-28c0b69d,,,1792860741.596657
+{'object_id': 'Part_A'},,,,action,,,,pick,scene-44c70760,,,1792860741.6565619
+"{'object_id': 'Part_A', 'slot_id': 'Slot_1'}",,,,action,,,,place,scene-1a6ba3b3,,,1792860746.0607314
+{'target_id': 'Clearance'},,,,action,,,,move_to,scene-cac97f6c,,,1792860746.1441867
+,,,,plan,,"{'task_id': 'task-ABC', 'based_on_snapshot': 'scene-9a5c08a8', 'disposition': 'execute', 'reason': '', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_B'}}, {'skill': 'pick', 'args': {'object_id': 'Part_B'}}, {'skill': 'place', 'args': {'object_id': 'Part_B', 'slot_id': 'Slot_2'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-003'}",,,,,,1792860755.7565055
+,,task-ABC:relocate:Part_B,,relocation,Part_B,,"{'part': 'Part_B', 'x_mm': 450.0, 'y_mm': -100.0, 'z_mm': 50.0}",,,,,1792860768.2177746
+,,,"{'code': 'OBJECT_MOVED', 'reason': 'Part_B moved at relocation gate', 'event_id': 'task-ABC:relocate:Part_B', 'affected_object': 'Part_B', 'failed_plan_id': 'plan-003'}",plan,,"{'task_id': 'task-ABC', 'based_on_snapshot': 'scene-2883f5b3', 'disposition': 'execute', 'reason': '', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_B'}}, {'skill': 'pick', 'args': {'object_id': 'Part_B'}}, {'skill': 'place', 'args': {'object_id': 'Part_B', 'slot_id': 'Slot_2'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-004'}",,,,,,1792860778.1153524
+{'object_id': 'Part_B'},,,,action,,,,inspect,scene-65d86e36,,,1792860778.44399
+{'object_id': 'Part_B'},,,,action,,,,pick,scene-011281b7,,,1792860778.5150738
+"{'object_id': 'Part_B', 'slot_id': 'Slot_2'}",,,,action,,,,place,scene-764a516c,,,1792860783.4416163
+{'target_id': 'Clearance'},,,,action,,,,move_to,scene-d9a66550,,,1792860783.5260112
+,,,,plan,,"{'task_id': 'task-ABC', 'based_on_snapshot': 'scene-fa1f21f2', 'disposition': 'execute', 'reason': '', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_C'}}, {'skill': 'pick', 'args': {'object_id': 'Part_C'}}, {'skill': 'place', 'args': {'object_id': 'Part_C', 'slot_id': 'Slot_3'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-005'}",,,,,,1792860793.0450633
+,,task-ABC:relocate:Part_C,,relocation,Part_C,,"{'part': 'Part_C', 'x_mm': 470.0, 'y_mm': -60.0, 'z_mm': 50.0}",,,,,1792860801.5241525
+,,,"{'code': 'OBJECT_MOVED', 'reason': 'Part_C moved at relocation gate', 'event_id': 'task-ABC:relocate:Part_C', 'affected_object': 'Part_C', 'failed_plan_id': 'plan-005'}",plan,,"{'task_id': 'task-ABC', 'based_on_snapshot': 'scene-5ddbb180', 'disposition': 'execute', 'reason': '', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_C'}}, {'skill': 'pick', 'args': {'object_id': 'Part_C'}}, {'skill': 'place', 'args': {'object_id': 'Part_C', 'slot_id': 'Slot_3'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-006'}",,,,,,1792860811.2930322
+{'object_id': 'Part_C'},,,,action,,,,inspect,scene-36f2cb6b,,,1792860811.6274993
+{'object_id': 'Part_C'},,,,action,,,,pick,scene-f94ff3b9,,,1792860811.6925313
+"{'object_id': 'Part_C', 'slot_id': 'Slot_3'}",,,,action,,,,place,scene-f1bd1063,,,1792860816.423994
+{'target_id': 'Clearance'},,,,action,,,,move_to,scene-65f605c6,,,1792860816.508149
+,"['Part_A', 'Part_B', 'Part_C']",,,result,,,,,,True,,1792860816.5644598

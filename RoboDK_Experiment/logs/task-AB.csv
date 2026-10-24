@@ -1,0 +1,13 @@
+args,completed,feedback,kind,plan,skill,snapshot_id,success,task,timestamp
+,,,start,,,,,"{'task_id': 'task-AB', 'requested_parts': ['Part_A', 'Part_B'], 'order': ['Part_A', 'Part_B'], 'destinations': {'Part_A': 'Slot_1', 'Part_B': 'Slot_2'}, 'goal': 'Place requested parts in their assigned processing slots'}",1792764989.4270234
+,,,plan,"{'task_id': 'task-AB', 'based_on_snapshot': 'scene-4f5db0e9', 'disposition': 'execute', 'reason': 'Immediate deterministic replan after observed scene change', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_A'}}, {'skill': 'pick', 'args': {'object_id': 'Part_A'}}, {'skill': 'place', 'args': {'object_id': 'Part_A', 'slot_id': 'Slot_1'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}, {'skill': 'inspect', 'args': {'object_id': 'Part_B'}}, {'skill': 'pick', 'args': {'object_id': 'Part_B'}}, {'skill': 'place', 'args': {'object_id': 'Part_B', 'slot_id': 'Slot_2'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-001'}",,,,,1792764991.5107155
+{'object_id': 'Part_A'},,,action,,inspect,scene-7678b4e9,,,1792764992.0335548
+{'object_id': 'Part_A'},,,action,,pick,scene-28de23f3,,,1792764992.1560924
+"{'object_id': 'Part_A', 'slot_id': 'Slot_1'}",,,action,,place,scene-c97028e5,,,1792764995.6284535
+{'target_id': 'Clearance'},,,action,,move_to,scene-46f10c7d,,,1792764995.733711
+,,,plan,"{'task_id': 'task-AB', 'based_on_snapshot': 'scene-cbdf10a7', 'disposition': 'execute', 'reason': 'Immediate deterministic replan after observed scene change', 'actions': [{'skill': 'inspect', 'args': {'object_id': 'Part_B'}}, {'skill': 'pick', 'args': {'object_id': 'Part_B'}}, {'skill': 'place', 'args': {'object_id': 'Part_B', 'slot_id': 'Slot_2'}}, {'skill': 'move_to', 'args': {'target_id': 'Clearance'}}], 'plan_id': 'plan-002'}",,,,,1792764995.83871
+{'object_id': 'Part_B'},,,action,,inspect,scene-0460ff99,,,1792764996.2912986
+{'object_id': 'Part_B'},,,action,,pick,scene-c1a7b5a4,,,1792764996.37345
+"{'object_id': 'Part_B', 'slot_id': 'Slot_2'}",,,action,,place,scene-7bdffb88,,,1792764999.8794951
+{'target_id': 'Clearance'},,,action,,move_to,scene-b39aaab1,,,1792764999.9706845
+,"['Part_A', 'Part_B']",,result,,,,True,,1792765000.0410619

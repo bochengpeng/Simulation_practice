@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="projectPath" value="D:\Year4-Robot_Simulation\Simulation_practice\RoboDK_Experiment" />
+              <option name="provider" value="claude" />
+              <option name="sessionId" value="ff7d39ea-7ac5-44ce-a974-db328a50ecf5" />
+              <option name="cwd" value="D:\Year4-Robot_Simulation\Simulation_practice\RoboDK_Experiment" />
+              <option name="model" value="claude-sonnet-5-5[1m]" />
+              <option name="permissionMode" value="acceptEdits" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

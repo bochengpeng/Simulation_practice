@@ -12,13 +12,19 @@ import time
 from pathlib import Path
 
 from robodk.robolink import ITEM_TYPE_FRAME, ITEM_TYPE_ROBOT, Robolink
-from robodk.robomath import Mat
+from robodk.robomath import Mat, rotz
+
+from robodk_adaptive.collision_guard import (
+    TableCollisionError,
+    guarded_joint_move,
+    guarded_linear_move,
+)
 
 
 OBJECTS = ("Object_A", "Object_B", "Object_C")
 ZONES = ("Zone_A", "Zone_B", "Zone_C", "Zone_D")
 GRIPPER_TOOL_POSE = Mat([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 125], [0, 0, 0, 1]])
-STATION_FILE = Path(__file__).resolve().parent / "Doosan_M0609_SSM3_Pick_and_Place.rdk"
+STATION_FILE = Path(__file__).resolve().parent / "Doosan_M0609_SSM3_Original.rdk"
 TABLE_TOP = 0.0
 GRIPPER_BASE_OFFSET = Mat.eye(4)
 LINEAR_SPEED_MM_S = 60.0
@@ -37,6 +43,27 @@ GRIPPER_CLOSED_VALUE = 13.0
 GRIPPER_OPEN_RATIO = 0.90
 GRIPPER_MOTION_STEPS = 12
 GRIPPER_MOTION_TIME_S = 0.45
+
+# -- Table-collision check / local path adjustment ---------------------
+# RoboDK's real-time MoveJ/MoveL never stop a simulated motion on their own
+# when a collision occurs; *_Test() is the documented way to check a
+# candidate segment before dispatching it. These control how finely a
+# segment is sampled and, when a transit segment would clip the table, how
+# far it is progressively lifted (in mm, above TABLE_TOP) before trying
+# again. Smallest/least-disruptive clearance first.
+COLLISION_TEST_STEP_MM = 5.0
+COLLISION_TEST_STEP_DEG = 2.0
+TABLE_COLLISION_CLEARANCE_STEPS_MM = (60.0, 140.0, 240.0)
+# Alternate tool yaw angles tried when the straight pick descent is blocked.
+# The 80 mm block is square, so a 90/180 degree turn grasps it identically.
+PICK_YAW_ALTERNATIVES_DEG = (90.0, -90.0, 180.0)
+# RoboDK reports collisions per robot link id (0 = base). This station
+# mounts the robot base into/at the table surface, so that overlap is
+# expected geometry, not a crash, and must stay exempt even once the arm
+# itself is checked against the table. If a different false positive shows
+# up on a specific link in your own station (verify visually in RoboDK with
+# collisions shown, or via `python main.py doctor`), add its link id here.
+TABLE_COLLISION_EXEMPT_LINK_IDS = {0}
 
 
 def parse_tasks(values):
@@ -99,6 +126,26 @@ def configure_physical_collisions(rdk, robot, source):
     for first, second, first_id, second_id in (
         rdk.CollisionActivePairList()
     ):
+        first_is_robot_body = first.Name() == robot.Name()
+        second_is_robot_body = second.Name() == robot.Name()
+        if (
+            first_is_robot_body and second.Name() in non_physical_names
+        ) or (
+            second_is_robot_body and first.Name() in non_physical_names
+        ):
+            # The user-requested "did the arm hit the table" check: the
+            # robot ITEM's own links are checked against the table/zones
+            # (link id 0, the base mounted into the table, stays exempt --
+            # that overlap is expected geometry, not a crash). The mounted
+            # tool items (gripper, TCP frames) handled below stay exempt as
+            # before; place/approach still blanket-disable collisions for
+            # their deliberately contact-making moves.
+            link_id = first_id if first_is_robot_body else second_id
+            state = 0 if link_id in TABLE_COLLISION_EXEMPT_LINK_IDS else 1
+            rdk.setCollisionActivePair(
+                state, first, second, first_id, second_id
+            )
+            continue
         if (
             first.Name() in mounted_items
             and second.Name() in non_physical_names
@@ -310,7 +357,108 @@ def ik_is_invalid(joints):
     )
 
 
+class RoboDKMover:
+    """Concrete ``collision_guard.Mover`` for the live RoboDK station: a
+    thin wrapper over the real robot/table items so the collision-guard
+    retry policy (framework-agnostic, unit-tested on its own) can drive the
+    live simulation.
+    """
+
+    def __init__(self, rdk, robot, table):
+        self._rdk = rdk
+        self._robot = robot
+        self._table = table
+
+    def current_joints(self):
+        return self._robot.Joints()
+
+    def current_pose(self):
+        return self._robot.Pose()
+
+    def solve_ik(self, pose):
+        return self._robot.SolveIK(pose)
+
+    def is_reachable(self, joints) -> bool:
+        return not ik_is_invalid(joints)
+
+    def test_joint_move(self, start_joints, end_joints) -> int:
+        return self._robot.MoveJ_Test(start_joints, end_joints, COLLISION_TEST_STEP_DEG)
+
+    def test_linear_move(self, start_joints, end_pose) -> int:
+        return self._robot.MoveL_Test(start_joints, end_pose, COLLISION_TEST_STEP_MM)
+
+    def _collision_pairs(self):
+        self._rdk.Collisions()
+        return self._rdk.CollisionPairs()
+
+    def colliding_items(self) -> list[str]:
+        return [
+            f"{first.Name()}[{first_id}]<->{second.Name()}[{second_id}]"
+            for first, second, first_id, second_id in self._collision_pairs()
+        ]
+
+    def table_collision(self) -> bool:
+        pairs = self._collision_pairs()
+        if not pairs:
+            return bool(self._robot.Collision(self._table))
+        return any(
+            item.Name() == self._table.Name() or item.Name().startswith("SSM3_Zone_")
+            for first, second, _, _ in pairs
+            for item in (first, second)
+        )
+
+    def restore_joints(self, joints) -> None:
+        self._robot.setJoints(joints)
+
+    def dispatch_joint_move(self, joints) -> None:
+        self._robot.MoveJ(joints)
+
+    def dispatch_linear_move(self, pose) -> None:
+        self._robot.MoveL(pose)
+
+    def raised_to(self, pose, z_mm: float):
+        result = pose.copy()
+        result[2, 3] = max(result[2, 3], TABLE_TOP + z_mm)
+        return result
+
+    def z_of(self, pose) -> float:
+        return pose[2, 3] - TABLE_TOP
+
+    def yawed(self, pose, deg: float):
+        return pose * rotz(math.radians(deg))
+
+
+def retreat_to_safe_height(rdk, robot):
+    """Best effort: lift straight up to the safe transfer height so a failed
+    task never leaves the arm low over (or in contact with) the table."""
+    table = rdk.Item("SSM3_Table")
+    if not table.Valid():
+        return
+    mover = RoboDKMover(rdk, robot, table)
+    try:
+        guarded_joint_move(
+            mover,
+            mover.raised_to(mover.current_pose(), SAFE_TRANSFER_HEIGHT_MM),
+            TABLE_COLLISION_CLEARANCE_STEPS_MM,
+            "Safe retreat",
+        )
+    except Exception as exc:
+        print(f"Safe retreat after collision failed: {exc}", flush=True)
+
+
 def execute_task(
+    rdk, robot, tool, mechanism, capture_tcp, frame, source, destination
+):
+    try:
+        return _execute_task(
+            rdk, robot, tool, mechanism, capture_tcp, frame, source, destination
+        )
+    except TableCollisionError:
+        retreat_to_safe_height(rdk, robot)
+        raise
+
+
+def _execute_task(
     rdk, robot, tool, mechanism, capture_tcp, frame, source, destination
 ):
     approach = target(rdk, source, destination, "PickApproach")
@@ -322,7 +470,12 @@ def execute_task(
             raise RuntimeError(f"Missing target: {item.Name()}")
     validate_vertical_descent(place_approach, place)
 
+    table = rdk.Item("SSM3_Table")
+    mover = RoboDKMover(rdk, robot, table) if table.Valid() else None
+    collision_adjustments = 0
+
     def move_to(item):
+        nonlocal collision_adjustments
         joints = robot.SolveIK(item.Pose())
         if ik_is_invalid(joints):
             raise RuntimeError(f"Target is not reachable: {item.Name()}")
@@ -343,11 +496,22 @@ def execute_task(
                     robot.MoveJ(safe_joints)
                 finally:
                     rdk.setCollisionActive(1)
+            elif mover is not None:
+                outcome = guarded_joint_move(
+                    mover, safe_pose, TABLE_COLLISION_CLEARANCE_STEPS_MM, item.Name()
+                )
+                collision_adjustments += outcome.attempts
             else:
                 robot.MoveJ(safe_joints)
             return
         if item.Name().endswith("Pick"):
-            robot.MoveL(item)
+            if mover is not None:
+                outcome = guarded_linear_move(
+                    mover, item.Pose(), item.Name(), PICK_YAW_ALTERNATIVES_DEG
+                )
+                collision_adjustments += outcome.attempts
+            else:
+                robot.MoveL(item)
         elif item.Name().endswith("Place"):
             # The final descent intentionally brings the carried block and
             # black jaws into contact with the destination zone. RoboDK's
@@ -358,25 +522,40 @@ def execute_task(
                 robot.MoveL(item)
             finally:
                 rdk.setCollisionActive(1)
+        elif mover is not None:
+            outcome = guarded_joint_move(
+                mover, item.Pose(), TABLE_COLLISION_CLEARANCE_STEPS_MM, item.Name()
+            )
+            collision_adjustments += outcome.attempts
         else:
             robot.MoveJ(item)
 
-    move_gripper(mechanism, opened=True)
-    move_to(approach)
-    move_to(pick)
     selected = workpiece_item(rdk, source)
-    validate_jaw_alignment(capture_tcp, selected, "pre-attachment pickup pose")
-    move_gripper(mechanism, opened=False)
-    selected.setParent(capture_tcp)
-    selected.setPose(
-        Mat([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0],
-            [0, 0, 1, CAPTURE_OBJECT_OFFSET_Z_MM],
-            [0, 0, 0, 1],
-        ])
+    already_holding = (
+        selected.Parent().Valid() and selected.Parent().Name() == capture_tcp.Name()
     )
-    validate_jaw_capture(capture_tcp, selected, "pickup")
+    if not already_holding:
+        move_gripper(mechanism, opened=True)
+        move_to(approach)
+        move_to(pick)
+        validate_jaw_alignment(capture_tcp, selected, "pre-attachment pickup pose")
+        move_gripper(mechanism, opened=False)
+        selected.setParent(capture_tcp)
+        selected.setPose(
+            Mat([
+                [1, 0, 0, 0],
+                [0, 1, 0, 0],
+                [0, 0, 1, CAPTURE_OBJECT_OFFSET_Z_MM],
+                [0, 0, 0, 1],
+            ])
+        )
+        validate_jaw_capture(capture_tcp, selected, "pickup")
+    else:
+        # Resuming after a recovered table collision from an earlier
+        # attempt: the object is already grasped. Re-verify the grasp
+        # instead of re-opening the gripper or re-running the pick descent
+        # -- a held part is not pending on the table.
+        validate_jaw_capture(capture_tcp, selected, "resumed pickup (already held)")
 
     move_to(approach)
     validate_jaw_capture(capture_tcp, selected, "post-pick lift")
@@ -434,6 +613,7 @@ def execute_task(
         raise RuntimeError(
             f"{source} moved after release by {final_offset:.1f} mm"
         )
+    return collision_adjustments
 
 
 def main():

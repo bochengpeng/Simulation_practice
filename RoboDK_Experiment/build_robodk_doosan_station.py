@@ -15,7 +15,7 @@ from robodk.robomath import Mat, rotx, transl
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
-OUTPUT_STATION = PROJECT_DIR / "Doosan_M0609_SSM3_Pick_and_Place.rdk"
+OUTPUT_STATION = PROJECT_DIR / "Doosan_M0609_SSM3_Original.rdk"
 GRIPPER_MODEL = PROJECT_DIR / "OnRobot-2FG7-Gripper.robot"
 GRIPPER_TOOL_POSE = transl(0.0, 0.0, 125.0)
 GRIPPER_BASE_OFFSET = Mat.eye(4)
@@ -240,7 +240,7 @@ def main():
     object_centers = {
         "Object_A": (600.0, 350.0),
         "Object_B": (600.0, 0.0),
-        "Object_C": (600.0, -400.0),
+        "Object_C": (600.0, -350.0),
     }
     objects = {}
     for name, (x, y) in object_centers.items():
