@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 from .models import *
 import uuid
+
 class TaskState:
     def __init__(self, spec:TaskSpec, snapshot:SceneSnapshot):
         spec.validate()
@@ -38,13 +39,17 @@ class TaskState:
         self.snapshot.parts[part].status=PartStatus.PLACED
         self.snapshot.parts[part].verified_slot=self.spec.destinations[part]
         self.snapshot.slots[self.spec.destinations[part]].occupant=part
+
     def record_failure(self,failure): self.failures.append(failure)
+
     def fresh_task_id(self): return self.spec.task_id
+
     def verify(self):
         for part in self.spec.requested_parts:
             p=self.snapshot.parts[part]; slot=self.spec.destinations[part]
             if p.status!=PartStatus.PLACED or p.verified_slot!=slot: return False
         return True
+
     def summary(self):
         return {
             'task_id': self.spec.task_id,

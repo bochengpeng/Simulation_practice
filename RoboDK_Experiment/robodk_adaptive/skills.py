@@ -1,4 +1,5 @@
 ﻿from .models import *
+
 class SkillRegistry:
     names={'inspect','move_to','pick','place'}
     def compile(self, spec, snapshot):

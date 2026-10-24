@@ -1,7 +1,9 @@
 ﻿from __future__ import annotations
 from .models import *
+
 ALLOWED_SKILLS={'inspect','move_to','pick','place'}
 TARGETS={'Home','Clearance'}
+
 class PlanValidator:
     def __init__(self,spec:TaskSpec): self.spec=spec
     def validate(self,plan:Plan,snapshot:SceneSnapshot):
