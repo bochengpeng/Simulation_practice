@@ -5,8 +5,10 @@
     <orderEntry type="jdk" jdkName="~\AppData\Local\Programs\Python\Python313\python.exe" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
-  <component name="PackageRequirementsSettings" />
-  <component name="PyDocumentationSettings" />
-  <component name="ReSTService" />
-  <component name="TestRunnerService" />
+  <component name="PyDocumentationSettings">
+    <option name="format" value="PLAIN" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="py.test" />
+  </component>
 </module>
