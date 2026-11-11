@@ -1,0 +1,87 @@
+# Capability file — the single source of truth for names, rules and limits (NFR2).
+# The prompt builder, the checker and the station-consistency check all read this file.
+# Never type a position/part/function name by hand anywhere else.
+
+version: 1
+use_case: "order-based kitting with kit correction"
+
+positions:
+  HOME:
+    kind: home
+  BIN_1:
+    kind: bin
+    holds: BOLT
+  BIN_2:
+    kind: bin
+    holds: SPACER_SHORT
+  BIN_3:
+    kind: bin
+    holds: SPACER_LONG
+  SLOT_1:
+    kind: tray_slot
+    protected: true
+  SLOT_2:
+    kind: tray_slot
+  SLOT_3:
+    kind: tray_slot
+  SLOT_4:
+    kind: tray_slot
+  RETURN:
+    kind: return
+
+parts:
+  BOLT:
+    home_bin: BIN_1
+  SPACER_SHORT:
+    home_bin: BIN_2
+  SPACER_LONG:
+    home_bin: BIN_3
+
+# The "five functions" of the design: four that move/read the cell, plus the
+# cell-state query. Only the orchestrator calls these, on the RoboDK cell,
+# after the checker says run. The model never runs them.
+functions:
+  move_to:
+    args: [position]
+    description: >-
+      Move the robot to the named target position (HOME, a bin, a slot or RETURN).
+  pick:
+    args: [part, source]
+    description: >-
+      Close the gripper on `part` at `source`. The part item becomes a child
+      of the tool, so it moves with the arm.
+  place:
+    args: [part, slot]
+    description: >-
+      Open the gripper over `slot`. The part item becomes a child of that
+      slot, bin, or RETURN target.
+  locate:
+    args: [part]
+    description: >-
+      Report the current parent of `part`: a bin, a slot, the tool, or RETURN.
+  read_cell_state:
+    args: []
+    description: >-
+      Report the full cell state: every part's parent, the last target the
+      arm reached, and what the tool currently holds.
+
+rules:
+  one_part_per_slot: true
+  protected_slots: [SLOT_1]
+  allowed_parts: [BOLT, SPACER_SHORT, SPACER_LONG]
+  max_retries: 3
+  max_steps_per_plan: 20
+  max_time_budget_s: 600
+
+# Fixed, named model versions and temperature 0 (NFR1). Swap the model name
+# here only — the rest of the code is provider-agnostic.
+models:
+  ollama:
+    provider: ollama
+    model: qwen3:4b
+    temperature: 0
+    base_url: http://localhost:11434
+  groq:
+    provider: groq
+    model: openai/gpt-oss-120b
+    temperature: 0

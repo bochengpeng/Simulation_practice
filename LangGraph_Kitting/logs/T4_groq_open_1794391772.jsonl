@@ -1,0 +1,1 @@
+{"event": "skipped", "order_id": "T4", "reason": "GROQ_API_KEY is not set. Add it to .env to use the Groq model.", "timestamp": 1794391772.5833793, "model": "openai/gpt-oss-120b", "provider": "groq", "prompt_version": "ssm3-kitting-v1"}

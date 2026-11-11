@@ -1,0 +1,50 @@
+=== T1 ollama open ===
+{'order_id': 'T1', 'provider': 'ollama', 'loop_mode': 'open', 'status': 'SUCCESS', 'task_success': False, 'retries': 0, 'elapsed_s': 6.56, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T1_ollama_open_1794391706.jsonl', 'reason': ''}
+=== T1 ollama closed ===
+{'order_id': 'T1', 'provider': 'ollama', 'loop_mode': 'closed', 'status': 'SUCCESS', 'task_success': False, 'retries': 0, 'elapsed_s': 6.51, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T1_ollama_closed_1794391714.jsonl', 'reason': ''}
+=== T1 groq open ===
+{'order_id': 'T1', 'provider': 'groq', 'loop_mode': 'open', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T1_groq_open_1794391722.jsonl'}
+=== T1 groq closed ===
+{'order_id': 'T1', 'provider': 'groq', 'loop_mode': 'closed', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T1_groq_closed_1794391722.jsonl'}
+=== T2 ollama open ===
+{'order_id': 'T2', 'provider': 'ollama', 'loop_mode': 'open', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 7.54, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T2_ollama_open_1794391722.jsonl', 'reason': ''}
+=== T2 ollama closed ===
+{'order_id': 'T2', 'provider': 'ollama', 'loop_mode': 'closed', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 6.47, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T2_ollama_closed_1794391731.jsonl', 'reason': ''}
+=== T2 groq open ===
+{'order_id': 'T2', 'provider': 'groq', 'loop_mode': 'open', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T2_groq_open_1794391738.jsonl'}
+=== T2 groq closed ===
+{'order_id': 'T2', 'provider': 'groq', 'loop_mode': 'closed', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T2_groq_closed_1794391738.jsonl'}
+=== T3 ollama open ===
+{'order_id': 'T3', 'provider': 'ollama', 'loop_mode': 'open', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 7.69, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T3_ollama_open_1794391738.jsonl', 'reason': ''}
+=== T3 ollama closed ===
+{'order_id': 'T3', 'provider': 'ollama', 'loop_mode': 'closed', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 6.49, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T3_ollama_closed_1794391747.jsonl', 'reason': ''}
+=== T3 groq open ===
+{'order_id': 'T3', 'provider': 'groq', 'loop_mode': 'open', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T3_groq_open_1794391755.jsonl'}
+=== T3 groq closed ===
+{'order_id': 'T3', 'provider': 'groq', 'loop_mode': 'closed', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T3_groq_closed_1794391755.jsonl'}
+=== T4 ollama open ===
+{'order_id': 'T4', 'provider': 'ollama', 'loop_mode': 'open', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 7.98, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T4_ollama_open_1794391755.jsonl', 'reason': ''}
+=== T4 ollama closed ===
+{'order_id': 'T4', 'provider': 'ollama', 'loop_mode': 'closed', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 6.57, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T4_ollama_closed_1794391764.jsonl', 'reason': ''}
+=== T4 groq open ===
+{'order_id': 'T4', 'provider': 'groq', 'loop_mode': 'open', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T4_groq_open_1794391772.jsonl'}
+=== T4 groq closed ===
+{'order_id': 'T4', 'provider': 'groq', 'loop_mode': 'closed', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T4_groq_closed_1794391772.jsonl'}
+=== T5 ollama open ===
+{'order_id': 'T5', 'provider': 'ollama', 'loop_mode': 'open', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 7.67, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T5_ollama_open_1794391772.jsonl', 'reason': ''}
+=== T5 ollama closed ===
+{'order_id': 'T5', 'provider': 'ollama', 'loop_mode': 'closed', 'status': 'SUCCESS', 'task_success': True, 'retries': 0, 'elapsed_s': 6.47, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T5_ollama_closed_1794391780.jsonl', 'reason': ''}
+=== T5 groq open ===
+{'order_id': 'T5', 'provider': 'groq', 'loop_mode': 'open', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T5_groq_open_1794391787.jsonl'}
+=== T5 groq closed ===
+{'order_id': 'T5', 'provider': 'groq', 'loop_mode': 'closed', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T5_groq_closed_1794391787.jsonl'}
+=== T6 ollama open ===
+{'order_id': 'T6', 'provider': 'ollama', 'loop_mode': 'open', 'status': 'SUCCESS', 'task_success': False, 'retries': 0, 'elapsed_s': 8.03, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T6_ollama_open_1794391787.jsonl', 'reason': ''}
+=== T6 ollama closed ===
+{'order_id': 'T6', 'provider': 'ollama', 'loop_mode': 'closed', 'status': 'SUCCESS', 'task_success': False, 'retries': 0, 'elapsed_s': 6.39, 'ai_calls': 1, 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T6_ollama_closed_1794391796.jsonl', 'reason': ''}
+=== T6 groq open ===
+{'order_id': 'T6', 'provider': 'groq', 'loop_mode': 'open', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T6_groq_open_1794391803.jsonl'}
+=== T6 groq closed ===
+{'order_id': 'T6', 'provider': 'groq', 'loop_mode': 'closed', 'status': 'SKIPPED', 'reason': 'GROQ_API_KEY is not set. Add it to .env to use the Groq model.', 'log_path': 'D:\\Year4-Robot_Simulation\\Simulation_practice\\LangGraph_Kitting\\logs\\T6_groq_closed_1794391803.jsonl'}
+
+Wrote D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\results_table.csv

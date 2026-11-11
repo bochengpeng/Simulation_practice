@@ -1,0 +1,25 @@
+order_id,provider,loop_mode,status,task_success,retries,elapsed_s,ai_calls,log_path,reason
+T1,ollama,open,SUCCESS,False,0,6.56,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T1_ollama_open_1794391706.jsonl,
+T1,ollama,closed,SUCCESS,False,0,6.51,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T1_ollama_closed_1794391714.jsonl,
+T1,groq,open,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T1_groq_open_1794391722.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T1,groq,closed,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T1_groq_closed_1794391722.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T2,ollama,open,SUCCESS,True,0,7.54,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T2_ollama_open_1794391722.jsonl,
+T2,ollama,closed,SUCCESS,True,0,6.47,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T2_ollama_closed_1794391731.jsonl,
+T2,groq,open,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T2_groq_open_1794391738.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T2,groq,closed,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T2_groq_closed_1794391738.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T3,ollama,open,SUCCESS,True,0,7.69,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T3_ollama_open_1794391738.jsonl,
+T3,ollama,closed,SUCCESS,True,0,6.49,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T3_ollama_closed_1794391747.jsonl,
+T3,groq,open,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T3_groq_open_1794391755.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T3,groq,closed,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T3_groq_closed_1794391755.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T4,ollama,open,SUCCESS,True,0,7.98,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T4_ollama_open_1794391755.jsonl,
+T4,ollama,closed,SUCCESS,True,0,6.57,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T4_ollama_closed_1794391764.jsonl,
+T4,groq,open,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T4_groq_open_1794391772.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T4,groq,closed,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T4_groq_closed_1794391772.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T5,ollama,open,SUCCESS,True,0,7.67,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T5_ollama_open_1794391772.jsonl,
+T5,ollama,closed,SUCCESS,True,0,6.47,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T5_ollama_closed_1794391780.jsonl,
+T5,groq,open,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T5_groq_open_1794391787.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T5,groq,closed,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T5_groq_closed_1794391787.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T6,ollama,open,SUCCESS,False,0,8.03,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T6_ollama_open_1794391787.jsonl,
+T6,ollama,closed,SUCCESS,False,0,6.39,1,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T6_ollama_closed_1794391796.jsonl,
+T6,groq,open,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T6_groq_open_1794391803.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
+T6,groq,closed,SKIPPED,,,,,D:\Year4-Robot_Simulation\Simulation_practice\LangGraph_Kitting\logs\T6_groq_closed_1794391803.jsonl,GROQ_API_KEY is not set. Add it to .env to use the Groq model.
