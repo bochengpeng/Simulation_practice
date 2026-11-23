@@ -11,13 +11,24 @@ Run with RoboDK already open:
     python build_kitting_station.py
 """
 
+import sys
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
 
 import yaml
-from robodk.robolink import ITEM_TYPE_PROGRAM, ITEM_TYPE_ROBOT, Robolink
+from robodk.robolink import (
+    ITEM_TYPE_FRAME, ITEM_TYPE_PROGRAM, ITEM_TYPE_ROBOT, ITEM_TYPE_TARGET,
+    ITEM_TYPE_TOOL, Robolink,
+)
 from robodk.robomath import Mat, rotx, transl
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from station.layout import (  # noqa: E402
+    APPROACH_HEIGHT_MM, BIN_POSITIONS, BIN_SIZE_MM, PART_SIZE_MM,
+    RETURN_POSITION, SLOT_POSITIONS, SLOT_SIZE_MM, TABLE_TOP, seat_center_z,
+)
 
 PROJECT_DIR = Path(__file__).resolve().parent
 STATION_PATH = PROJECT_DIR / "Kitting_SSM3_Station.rdk"
@@ -26,30 +37,6 @@ CAPABILITY_PATH = PROJECT_DIR.parent / "config" / "capability.yaml"
 ROBOT_NAME = "Doosan Robotics M0609 White"
 GRIPPER_TOOL_POSE = transl(0.0, 0.0, 125.0)
 GRIPPER_DOWN_POSE = rotx(3.141592653589793)
-TABLE_TOP = 0.0
-APPROACH_HEIGHT_MM = 140.0
-
-# Positions reuse the reachable real estate proven by the earlier experiment
-# (old Object_A/B/C bin area, old Zone_A-D tray area, plus one new spot for
-# RETURN), so every target here is already known to be IK-reachable.
-BIN_POSITIONS = {
-    "BIN_1": (600.0, 350.0),
-    "BIN_2": (600.0, 0.0),
-    "BIN_3": (600.0, -350.0),
-}
-SLOT_POSITIONS = {
-    "SLOT_1": (150.0, -300.0),
-    "SLOT_2": (450.0, -300.0),
-    "SLOT_3": (150.0, 150.0),
-    "SLOT_4": (450.0, 150.0),
-}
-RETURN_POSITION = {"RETURN": (300.0, 350.0)}
-
-PART_SIZE_MM = {
-    "BOLT": (14.0, 14.0, 60.0),
-    "SPACER_SHORT": (40.0, 40.0, 20.0),
-    "SPACER_LONG": (40.0, 40.0, 40.0),
-}
 PART_COLOR = {
     "BOLT": [0.65, 0.65, 0.70, 1.0],
     "SPACER_SHORT": [0.85, 0.55, 0.15, 1.0],
@@ -115,8 +102,15 @@ def make_target(rdk, frame, robot, name, pose):
     target = rdk.AddTarget(name, frame, robot)
     target.setAsCartesianTarget()
     target.setPose(pose)
-    target.setVisible(1)
+    target.setVisible(1, 0)  # keep the name label, hide the axis arrows
     return target
+
+
+def hide_axes(rdk):
+    """Hide the red/green/blue axis triads but keep item names displayed."""
+    for item_type in (ITEM_TYPE_TARGET, ITEM_TYPE_FRAME, ITEM_TYPE_TOOL):
+        for item in rdk.ItemList(item_type):
+            item.setVisible(1, 0)
 
 
 def delete_named(rdk, prefixes):
@@ -183,7 +177,7 @@ def main():
         make_target(rdk, workcell, robot, "HOME", home_pose)
 
         for name, (x, y) in BIN_POSITIONS.items():
-            add_box(rdk, workcell, f"{name}_Model", (150.0, 150.0, 60.0),
+            add_box(rdk, workcell, f"{name}_Model", BIN_SIZE_MM,
                      (x, y, TABLE_TOP + 30.0), BIN_COLOR, stl_dir)
             pose = GRIPPER_DOWN_POSE.copy()
             pose[0, 3], pose[1, 3] = x, y
@@ -191,13 +185,13 @@ def main():
             make_target(rdk, workcell, robot, name, pose)
             part = capability["positions"][name]["holds"]
             size = PART_SIZE_MM[part]
-            part_pose = (x, y, TABLE_TOP + 60.0 + size[2] / 2.0)
+            part_pose = (x, y, seat_center_z("bin", part))
             part_item = add_box(rdk, workcell, part, size, part_pose,
                                  PART_COLOR[part], stl_dir)
             part_item.setParentStatic(rdk.Item(name))
 
         for name, (x, y) in SLOT_POSITIONS.items():
-            add_box(rdk, workcell, f"{name}_Model", (240.0, 240.0, 20.0),
+            add_box(rdk, workcell, f"{name}_Model", SLOT_SIZE_MM,
                      (x, y, TABLE_TOP + 10.0), SLOT_COLOR, stl_dir)
             pose = GRIPPER_DOWN_POSE.copy()
             pose[0, 3], pose[1, 3] = x, y
@@ -205,7 +199,7 @@ def main():
             make_target(rdk, workcell, robot, name, pose)
 
         for name, (x, y) in RETURN_POSITION.items():
-            add_box(rdk, workcell, f"{name}_Model", (240.0, 240.0, 20.0),
+            add_box(rdk, workcell, f"{name}_Model", SLOT_SIZE_MM,
                      (x, y, TABLE_TOP + 10.0), RETURN_COLOR, stl_dir)
             pose = GRIPPER_DOWN_POSE.copy()
             pose[0, 3], pose[1, 3] = x, y
@@ -215,6 +209,7 @@ def main():
         rmtree(stl_dir, ignore_errors=True)
 
     robot.setFrame(workcell)
+    hide_axes(rdk)
     rdk.setCollisionActive(1)
     rdk.Render(True)
     rdk.Save(str(STATION_PATH))

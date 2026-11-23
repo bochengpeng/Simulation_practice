@@ -9,6 +9,8 @@ run a function, and only after the checker says run (FR5).
 
 from __future__ import annotations
 
+from typing import List
+
 from langchain_core.tools import StructuredTool
 from pydantic import create_model
 
@@ -23,7 +25,7 @@ def _not_executable(name: str):
     return _raise
 
 
-def build_function_tools(capability: dict) -> list[StructuredTool]:
+def build_function_tools(capability: dict) -> List[StructuredTool]:
     tools = []
     for name, info in capability["functions"].items():
         args_schema = create_model(

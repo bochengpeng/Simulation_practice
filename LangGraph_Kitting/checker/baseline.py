@@ -22,7 +22,7 @@ def plan_for_order(order_id: str, cell_state: dict, capability: dict):
     if order_id in ("T1", "T6"):
         short_source = _location(cell_state, "SPACER_SHORT")
         long_source = _location(cell_state, "SPACER_LONG")
-        return Plan(steps=[
+        return Plan(type="plan", steps=[
             Action(function="move_to", args={"position": short_source}),
             Action(function="pick", args={"part": "SPACER_SHORT", "source": short_source}),
             Action(function="move_to", args={"position": "RETURN"}),
@@ -35,20 +35,20 @@ def plan_for_order(order_id: str, cell_state: dict, capability: dict):
         ], rationale="baseline: kit correction for SLOT_2")
 
     if order_id == "T2":
-        return Question(
+        return Question(type="question",
             message="Which spacer should go in SLOT_3: SPACER_SHORT or SPACER_LONG?"
         )
 
     if order_id == "T3":
-        return Refusal(
+        return Refusal(type="refusal",
             reason="Only one BOLT exists and SLOT_1 already holds it; "
                    "one-part-per-slot cannot be overridden."
         )
 
     if order_id == "T4":
-        return Refusal(reason="SLOT_1 is protected and cannot be changed.")
+        return Refusal(type="refusal", reason="SLOT_1 is protected and cannot be changed.")
 
     if order_id == "T5":
-        return Refusal(reason="WASHER is not a known part.")
+        return Refusal(type="refusal", reason="WASHER is not a known part.")
 
     raise ValueError(f"No baseline recipe for order {order_id!r}")

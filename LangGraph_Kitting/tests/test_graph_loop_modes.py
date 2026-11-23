@@ -8,6 +8,8 @@ the real cell has SPACER_LONG at BIN_2, not BIN_3, because a relocation
 happened after the (stale) snapshot was taken.
 """
 
+from langchain_core.exceptions import OutputParserException
+
 from langchain_app.capability_loader import load_capability
 from langchain_app.schemas import Action, Plan, PlannerOutput
 from orchestrator.graph import build_graph, initial_state
@@ -22,7 +24,7 @@ STALE_SNAPSHOT = {
 }
 
 
-FIRST_PLAN = PlannerOutput(response=Plan(steps=[
+FIRST_PLAN = PlannerOutput(response=Plan(type="plan", steps=[
     Action(function="move_to", args={"position": "SLOT_2"}),
     Action(function="pick", args={"part": "SPACER_SHORT", "source": "SLOT_2"}),
     Action(function="move_to", args={"position": "RETURN"}),
@@ -36,7 +38,7 @@ FIRST_PLAN = PlannerOutput(response=Plan(steps=[
 
 # What a real replan would look like once the cell state is re-observed
 # after the failure: only the remaining work, from the real location.
-REPLAN = PlannerOutput(response=Plan(steps=[
+REPLAN = PlannerOutput(response=Plan(type="plan", steps=[
     Action(function="move_to", args={"position": "BIN_2"}),
     Action(function="pick", args={"part": "SPACER_LONG", "source": "BIN_2"}),
     Action(function="move_to", args={"position": "SLOT_2"}),
@@ -67,6 +69,55 @@ def _run(loop_mode: str):
                            STALE_SNAPSHOT, loop_mode)
     final = graph.invoke(state, config={"recursion_limit": 100})
     return final, chain, cell
+
+
+class BadThenGoodChain:
+    """First answer is malformed, then a no-op plan, then a real plan."""
+
+    def __init__(self):
+        self.calls = 0
+
+    def invoke(self, inputs, config=None):
+        self.calls += 1
+        if self.calls == 1:
+            raise OutputParserException("not valid JSON for the schema")
+        if self.calls == 2:
+            return PlannerOutput(response=Plan(type="plan", steps=[
+                Action(function="read_cell_state", args={}),
+            ]))
+        return FIRST_PLAN
+
+
+def test_malformed_answer_and_no_op_plan_are_caught_and_retried():
+    cell = PythonCell()
+    chain = BadThenGoodChain()
+    events = []
+    graph = build_graph(cell, CAPABILITY, chain, logger=events.append)
+    state = initial_state("T1", "Replace the short spacer in slot 2 with a long one",
+                           cell.read_state(), "closed")
+    final = graph.invoke(state, config={"recursion_limit": 100})
+    assert chain.calls == 3
+    assert final["final_status"] == "SUCCESS"
+    assert any(e["event"] == "invalid_format" for e in events)
+    assert any(e["event"] == "check" and e["check_result"]["code"] == "NO_ACTION"
+               for e in events)
+
+
+def test_retries_exhausted_on_malformed_answers_asks_operator():
+    class AlwaysBad:
+        calls = 0
+
+        def invoke(self, inputs, config=None):
+            self.calls += 1
+            raise OutputParserException("still not valid")
+
+    chain = AlwaysBad()
+    cell = PythonCell()
+    graph = build_graph(cell, CAPABILITY, chain)
+    state = initial_state("T1", "x", cell.read_state(), "closed")
+    final = graph.invoke(state, config={"recursion_limit": 100})
+    assert chain.calls == CAPABILITY["rules"]["max_retries"]
+    assert final["final_status"] == "ASKED_OPERATOR:INVALID_FORMAT"
 
 
 def test_open_loop_stops_without_recovering():

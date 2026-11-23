@@ -7,8 +7,9 @@ and goes into the human message; it is never merged into the system rules.
 
 from __future__ import annotations
 
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+import json
 
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 def build_system_text(capability: dict) -> str:
     lines: list[str] = [
@@ -69,10 +70,48 @@ def build_system_text(capability: dict) -> str:
     lines.append(
         "- A plan that does not change the cell state does not carry out an "
         "order that asks for a change: include every move_to/pick/place step "
-        "needed to actually finish the kit correction, not just locate/"
-        "read_cell_state steps."
+        "needed to actually finish the job, not just locate/read_cell_state "
+        "steps. If the order cannot or should not be carried out, answer "
+        "with a question or a refusal instead of a plan."
     )
+    lines.extend(_example_lines(capability))
     return "\n".join(lines)
+
+
+def _example_lines(capability: dict) -> list[str]:
+    """A worked answer in the required format, built from the capability
+    file so no position/part names are typed twice. It uses a different
+    order from the starter orders, for format illustration only."""
+    positions = capability["positions"]
+    home = next((n for n, i in positions.items() if i.get("kind") == "home"), None)
+    free_slots = [
+        n for n, i in positions.items()
+        if i.get("kind") == "tray_slot" and not i.get("protected")
+    ]
+    parts = list(capability["parts"])
+    if home is None or not free_slots or len(parts) < 2:
+        return []
+    slot, part = free_slots[-1], parts[1]
+    source = capability["parts"][part]["home_bin"]
+    steps = [
+        ("move_to", {"position": source}),
+        ("pick", {"part": part, "source": source}),
+        ("move_to", {"position": slot}),
+        ("place", {"part": part, "slot": slot}),
+        ("move_to", {"position": home}),
+    ]
+    answer = {"response": {"type": "plan", "steps": [
+        {"function": f, "args": a} for f, a in steps
+    ]}}
+    return [
+        "",
+        "Example of a correct answer (a different order, for illustration only):",
+        f"Order: Put the {part} in {slot} (it is in {source}; {slot} is empty)",
+        json.dumps(answer),
+        "A question or refusal looks like "
+        '{"response": {"type": "question", "message": "..."}} or '
+        '{"response": {"type": "refusal", "reason": "..."}}.',
+    ]
 
 
 def build_prompt_template() -> ChatPromptTemplate:

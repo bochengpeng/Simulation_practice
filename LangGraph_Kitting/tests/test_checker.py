@@ -17,7 +17,7 @@ def _action(function, **args):
 
 
 def test_t1_valid_kit_correction_is_ok():
-    plan = Plan(steps=[
+    plan = Plan(type="plan", steps=[
         _action("move_to", position="SLOT_2"),
         _action("pick", part="SPACER_SHORT", source="SLOT_2"),
         _action("move_to", position="RETURN"),
@@ -33,7 +33,7 @@ def test_t1_valid_kit_correction_is_ok():
 
 
 def test_t3_second_bolt_in_occupied_slot_is_rule_override():
-    plan = Plan(steps=[
+    plan = Plan(type="plan", steps=[
         _action("move_to", position="BIN_1"),
         _action("pick", part="BOLT", source="BIN_1"),
         _action("move_to", position="SLOT_1"),
@@ -47,7 +47,7 @@ def test_t3_second_bolt_in_occupied_slot_is_rule_override():
         "last_target": "HOME",
         "tool_holds": None,
     }
-    plan_targeting_occupied_slot = Plan(steps=[
+    plan_targeting_occupied_slot = Plan(type="plan", steps=[
         _action("move_to", position="SLOT_2"),
         _action("pick", part="SPACER_SHORT", source="SLOT_2"),
         _action("move_to", position="SLOT_1"),
@@ -62,7 +62,7 @@ def test_t3_second_bolt_in_occupied_slot_is_rule_override():
 
 
 def test_t4_swap_into_protected_slot_is_rejected():
-    plan = Plan(steps=[
+    plan = Plan(type="plan", steps=[
         _action("move_to", position="SLOT_1"),
         _action("pick", part="BOLT", source="SLOT_1"),
         _action("move_to", position="RETURN"),
@@ -78,7 +78,7 @@ def test_t4_swap_into_protected_slot_is_rejected():
 
 
 def test_t5_unknown_part_is_rejected():
-    plan = Plan(steps=[
+    plan = Plan(type="plan", steps=[
         _action("move_to", position="BIN_1"),
         _action("pick", part="WASHER", source="BIN_1"),
         _action("move_to", position="SLOT_3"),
@@ -90,7 +90,7 @@ def test_t5_unknown_part_is_rejected():
 
 
 def test_out_of_order_pick_is_rejected():
-    plan = Plan(steps=[
+    plan = Plan(type="plan", steps=[
         _action("pick", part="SPACER_LONG", source="SLOT_2"),
     ])
     result = check(plan, START_STATE, CAPABILITY)
@@ -98,8 +98,15 @@ def test_out_of_order_pick_is_rejected():
     assert result.code == "OUT_OF_ORDER"
 
 
+def test_plan_that_changes_nothing_is_rejected():
+    plan = Plan(type="plan", steps=[_action("read_cell_state")])
+    result = check(plan, START_STATE, CAPABILITY)
+    assert result.status == "REJECT"
+    assert result.code == "NO_ACTION"
+
+
 def test_occupied_slot_without_removal_is_rule_override():
-    plan = Plan(steps=[
+    plan = Plan(type="plan", steps=[
         _action("move_to", position="BIN_3"),
         _action("pick", part="SPACER_LONG", source="BIN_3"),
         _action("move_to", position="SLOT_2"),

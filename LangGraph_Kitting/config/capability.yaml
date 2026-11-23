@@ -81,7 +81,10 @@ models:
     model: qwen3:4b
     temperature: 0
     base_url: http://localhost:11434
-  groq:
-    provider: groq
-    model: openai/gpt-oss-120b
+  # Primary model. If a Gemini call fails (missing key, quota, network),
+  # the same call is retried on the `fallback` provider below.
+  gemini:
+    provider: gemini
+    model: gemini-3.5-flash-lite
     temperature: 0
+    fallback: ollama

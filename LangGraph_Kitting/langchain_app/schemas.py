@@ -17,8 +17,10 @@ class Action(BaseModel):
     args: dict = Field(default_factory=dict)
 
 
+# `type` has no default on purpose: a default makes it optional in the JSON
+# schema, and small models then omit it and fail the discriminated union.
 class Plan(BaseModel):
-    type: Literal["plan"] = "plan"
+    type: Literal["plan"]
     steps: list[Action]
     rationale: str = ""
 
@@ -31,12 +33,12 @@ class Plan(BaseModel):
 
 
 class Question(BaseModel):
-    type: Literal["question"] = "question"
+    type: Literal["question"]
     message: str
 
 
 class Refusal(BaseModel):
-    type: Literal["refusal"] = "refusal"
+    type: Literal["refusal"]
     reason: str
 
 

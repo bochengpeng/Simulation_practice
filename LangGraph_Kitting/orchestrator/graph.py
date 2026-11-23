@@ -9,6 +9,9 @@ here as an assumption to reconcile once the real Table 10 exists:
   plan -> ask_operator      (planner returned a question or a refusal -
                              the operator is told either way; a refusal
                              still stops the run, FR3/FR4)
+  plan -> plan              (the answer failed schema parsing: logged as
+                             `invalid_format`, counted as a retry; goes to
+                             ask_operator once retries are exhausted)
   check -> execute_step     (checker approved the plan)
   check -> plan             (checker rejected, retries < max_retries:
                              the rejection code/reason go into the prompt
@@ -27,7 +30,9 @@ from __future__ import annotations
 
 import dataclasses
 
+from langchain_core.exceptions import OutputParserException
 from langgraph.graph import END, StateGraph
+from pydantic import ValidationError
 
 from checker.checker import check
 from langchain_app.planner_chain import invoke_planner, rejection_history_messages
@@ -44,10 +49,34 @@ def build_graph(cell, capability: dict, planner_chain, logger=None, operator=Non
 
     def plan_node(state: GraphState) -> dict:
         history = rejection_history_messages(state["order_text"], state.get("rejections", []))
-        response = invoke_planner(
-            planner_chain, capability, state["order_text"], state["cell_state"],
-            history=history, callbacks=callbacks,
-        )
+        logger({
+            "event": "planning", "order_id": state["order_id"],
+            "attempt": state.get("retries", 0) + 1,
+        })
+        try:
+            response = invoke_planner(
+                planner_chain, capability, state["order_text"], state["cell_state"],
+                history=history, callbacks=callbacks,
+            )
+        except (OutputParserException, ValidationError, ValueError) as exc:
+            # The Pydantic schema is the first filter (Step 2): a malformed
+            # answer is caught here, logged apart from checker rejections
+            # (Step 4's schema-vs-checker log), and counted against retries.
+            reason = f"{type(exc).__name__}: {str(exc)[:300]}"
+            logger({"event": "invalid_format", "order_id": state["order_id"], "reason": reason})
+            return {
+                "plan": {"type": "invalid", "reason": reason},
+                "step_index": 0,
+                "step_failure": None,
+                "rejections": state.get("rejections", []) + [{
+                    "plan": {},
+                    "code": "INVALID_FORMAT",
+                    "reason": "Your last answer was not valid JSON for the required "
+                              "schema. Answer with exactly one plan, question or refusal.",
+                    "step_index": None,
+                }],
+                "retries": state.get("retries", 0) + 1,
+            }
         plan_dict = response.model_dump()
         logger({"event": "plan", "order_id": state["order_id"], "plan": plan_dict})
         return {
@@ -58,7 +87,11 @@ def build_graph(cell, capability: dict, planner_chain, logger=None, operator=Non
 
     def route_after_plan(state: GraphState) -> str:
         plan_type = state["plan"]["type"]
-        return "check" if plan_type == "plan" else "ask_operator"
+        if plan_type == "plan":
+            return "check"
+        if plan_type == "invalid" and state.get("retries", 0) < max_retries:
+            return "plan"
+        return "ask_operator"
 
     def check_node(state: GraphState) -> dict:
         plan = Plan(**state["plan"])
@@ -135,6 +168,8 @@ def build_graph(cell, capability: dict, planner_chain, logger=None, operator=Non
             code, message = "AMBIGUOUS", plan["message"]
         elif plan["type"] == "refusal":
             code, message = "REFUSAL", plan["reason"]
+        elif plan["type"] == "invalid":
+            code, message = "INVALID_FORMAT", plan["reason"]
         else:
             check_result = state.get("check_result") or {}
             code = check_result.get("code", "UNKNOWN")
@@ -164,7 +199,7 @@ def build_graph(cell, capability: dict, planner_chain, logger=None, operator=Non
 
     graph.set_entry_point("plan")
     graph.add_conditional_edges("plan", route_after_plan, {
-        "check": "check", "ask_operator": "ask_operator",
+        "check": "check", "plan": "plan", "ask_operator": "ask_operator",
     })
     graph.add_conditional_edges("check", route_after_check, {
         "execute_step": "execute_step", "plan": "plan", "ask_operator": "ask_operator",

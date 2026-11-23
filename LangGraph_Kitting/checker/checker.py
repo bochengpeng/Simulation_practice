@@ -44,6 +44,15 @@ def check(plan: Plan, cell_state: dict, capability: dict) -> CheckResult:
                    f"the limit is {rules['max_steps_per_plan']}",
         )
 
+    if not any(step.function in ("pick", "place") for step in plan.steps):
+        return CheckResult(
+            status="REJECT",
+            code="NO_ACTION",
+            reason="the plan never picks or places anything, so the cell would "
+                   "not change. If the order cannot or should not be carried "
+                   "out, answer with a question or a refusal instead of a plan",
+        )
+
     location = dict(cell_state["parts"])
     tool_name = "TOOL"
 
@@ -109,10 +118,20 @@ def check(plan: Plan, cell_state: dict, capability: dict) -> CheckResult:
                     None,
                 )
                 if occupant is not None:
+                    return_position = next(
+                        (n for n, i in positions.items() if i.get("kind") == "return"),
+                        None,
+                    )
+                    hint = (
+                        f" Clear it first: move_to {slot}, pick {occupant} from "
+                        f"{slot}, move_to {return_position}, place {occupant} at "
+                        f"{return_position}, then continue."
+                        if return_position else ""
+                    )
                     return CheckResult(
                         "REJECT", "RULE_OVERRIDE",
                         f"{slot} already holds {occupant!r}; one-part-per-slot "
-                        "would be broken",
+                        f"would be broken.{hint}",
                         index,
                     )
             location[part] = slot

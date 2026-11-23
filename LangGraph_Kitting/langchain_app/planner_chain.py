@@ -13,13 +13,28 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_app.chat_models import get_chat_model
 from langchain_app.prompt_builder import build_prompt_template, build_system_text
 from langchain_app.schemas import PlannerOutput
+from typing import Optional
+
+
+def _structured_chain(capability: dict, provider: str):
+    model = get_chat_model(provider, capability)
+    return build_prompt_template() | model.with_structured_output(PlannerOutput)
 
 
 def build_planner_chain(capability: dict, provider: str):
-    model = get_chat_model(provider, capability)
-    structured_model = model.with_structured_output(PlannerOutput)
-    prompt = build_prompt_template()
-    return prompt | structured_model
+    """Chain for `provider`; if its settings name a `fallback` provider, a
+    failed primary call (missing key, quota, network, invalid answer) is
+    retried on the fallback automatically."""
+    fallback_provider = capability["models"][provider].get("fallback")
+    if not fallback_provider:
+        return _structured_chain(capability, provider)
+
+    fallback_chain = _structured_chain(capability, fallback_provider)
+    try:
+        primary_chain = _structured_chain(capability, provider)
+    except RuntimeError:
+        return fallback_chain
+    return primary_chain.with_fallbacks([fallback_chain])
 
 
 def invoke_planner(
@@ -27,10 +42,13 @@ def invoke_planner(
     capability: dict,
     order_text: str,
     cell_state: dict,
-    history: list | None = None,
-    callbacks: list | None = None,
+    history: Optional[list] = None,
+    callbacks: Optional[list] = None
 ):
-    config = {"callbacks": callbacks} if callbacks else None
+    config = None
+    if callbacks:
+        config = {"callbacks": callbacks}
+
     result = chain.invoke({
         "system_text": build_system_text(capability),
         "order_text": order_text,
